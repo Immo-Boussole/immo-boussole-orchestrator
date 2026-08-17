@@ -1,0 +1,64 @@
+---
+# docker-compose.yml — LOCAL DEVELOPMENT ONLY
+# ⚠️  Uses bind mounts (./app, ./templates, etc.) for hot-reloading.
+# For production, use docker-compose.hub.yml instead.
+
+name: immo-boussole-orchestrator
+
+services:
+
+  # ── Orchestrator Web UI & API ───────────────────────────────────────────────
+  orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - APP_VERSION=${APP_VERSION:-dev}
+    image: immo-boussole-orchestrator:${APP_VERSION:-dev}
+    container_name: immo-boussole-orchestrator-dev
+    restart: unless-stopped
+
+    ports:
+      - "${ORCHESTRATOR_PORT:-9000}:9000"   # Web UI
+      - "${MCP_PORT:-9001}:9001"             # MCP server
+
+    environment:
+      SECRET_KEY:                 "${SECRET_KEY:-dev-secret}"
+      ADMIN_USERNAME:             "${ADMIN_USERNAME:-admin}"
+      ADMIN_PASSWORD:             "${ADMIN_PASSWORD:-admin}"
+      ORCHESTRATOR_HOST:          "0.0.0.0"
+      ORCHESTRATOR_PORT:          "9000"
+      MCP_PORT:                   "9001"
+      INSTANCES_FILE:             "/app/instances.yaml"
+      NOTIFICATION_WEBHOOK_URL:   "${NOTIFICATION_WEBHOOK_URL:-}"
+      SMTP_HOST:                  "${SMTP_HOST:-}"
+      SMTP_PORT:                  "${SMTP_PORT:-587}"
+      SMTP_USERNAME:              "${SMTP_USERNAME:-}"
+      SMTP_PASSWORD:              "${SMTP_PASSWORD:-}"
+      SMTP_FROM:                  "${SMTP_FROM:-orchestrator@example.com}"
+      SMTP_TO:                    "${SMTP_TO:-}"
+      HEALTH_POLL_INTERVAL:       "${HEALTH_POLL_INTERVAL:-30}"
+      DEBUG:                      "true"
+
+    volumes:
+      # Hot-reload source code
+      - ./app:/app/app
+      - ./templates:/app/templates
+      - ./static:/app/static
+      - ./cli:/app/cli
+      # Persist instances registry
+      - ./instances.yaml:/app/instances.yaml
+      # Docker socket (for controlling local Docker instances)
+      - /var/run/docker.sock:/var/run/docker.sock
+
+    command:
+      ["python", "-m", "uvicorn", "app.main:app",
+       "--host", "0.0.0.0", "--port", "9000", "--reload"]
+
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:9000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s

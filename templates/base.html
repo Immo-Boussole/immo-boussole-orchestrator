@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Immo-Boussole Orchestrator — Manage multiple Immo-Boussole instances from one dashboard." />
+  <title>{% block title %}Immo-Boussole Orchestrator{% endblock %}</title>
+
+  <!-- Favicon (inline SVG) -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎛️</text></svg>" />
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="/static/css/main.css" />
+
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+
+  <!-- ── Navbar ──────────────────────────────────────────────────────────── -->
+  <nav class="navbar" role="navigation" aria-label="Main navigation">
+    <div class="navbar-inner">
+      <a href="/" class="navbar-brand" aria-label="Immo-Boussole Orchestrator Home">
+        <span class="brand-icon" aria-hidden="true">🎛️</span>
+        <span>Orchestrator</span>
+      </a>
+
+      {% if instance_count is defined %}
+        <span class="instance-count-badge" title="Registered instances">
+          {{ instance_count }} instance{{ 's' if instance_count != 1 else '' }}
+        </span>
+      {% endif %}
+
+      <span class="navbar-spacer"></span>
+
+      {% if user %}
+        <span class="nav-user" aria-label="Logged in as {{ user }}">
+          <span aria-hidden="true">👤</span> {{ user }}
+        </span>
+      {% endif %}
+
+      <button
+        id="btn-theme"
+        class="btn-theme"
+        title="Toggle dark/light theme"
+        aria-label="Toggle dark/light theme"
+      >☀️</button>
+    </div>
+  </nav>
+
+  <!-- ── Flash messages ─────────────────────────────────────────────────── -->
+  {% with messages = get_flashed_messages(with_categories=true) if get_flashed_messages is defined else [] %}
+    {% if messages %}
+      <div class="page-container" style="padding-bottom: 0;">
+        {% for category, message in messages %}
+          <div class="toast toast-{{ category }}" role="alert" style="position:static;max-width:none;pointer-events:all;margin-bottom:0.5rem;">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- ── Page content ────────────────────────────────────────────────────── -->
+  <main id="main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- ── Toast container ─────────────────────────────────────────────────── -->
+  <div id="toast-container" aria-live="polite" aria-atomic="false"></div>
+
+  <!-- ── Scripts ─────────────────────────────────────────────────────────── -->
+  <script src="/static/js/app.js"></script>
+  {% block scripts_extra %}{% endblock %}
+</body>
+</html>

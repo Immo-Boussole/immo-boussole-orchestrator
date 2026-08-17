@@ -1,0 +1,44 @@
+# Immo-Boussole Orchestrator
+
+> CLI & web orchestrator to deploy, manage, monitor, and update multiple Immo-Boussole instances on local or remote Docker hosts.
+
+## Key Files
+
+- `app/main.py` — FastAPI application entry point
+- `app/config.py` — All configuration via pydantic-settings
+- `app/registry.py` — YAML-backed instance registry (CRUD)
+- `app/docker_manager.py` — Docker SDK abstraction (local/SSH/TCP)
+- `app/notifier.py` — Webhook + SMTP notifications
+- `app/scheduler.py` — APScheduler health poller
+- `app/mcp_server.py` — MCP server for Claude Desktop
+- `app/auth.py` — HTTP Basic auth
+- `app/models.py` — Pydantic request/response models
+- `app/routers/instances.py` — REST API (CRUD + lifecycle)
+- `app/routers/logs.py` — SSE log streaming
+- `cli/main.py` — Typer CLI
+- `templates/` — Jinja2 HTML templates
+- `static/css/main.css` — Vanilla CSS design system (dark/light)
+- `static/js/app.js` — Frontend JS (theme, SSE, API calls)
+
+## Architecture
+
+- Python 3.12 + FastAPI + Uvicorn
+- `python-on-whales` for Docker SDK
+- Typer + Rich for CLI
+- APScheduler for background health polling
+- MCP library for Claude Desktop integration
+- YAML file for instance registry persistence
+- Jinja2 for server-side HTML rendering
+- Vanilla CSS with dark/light theme tokens
+
+## API Endpoints
+
+- `GET /api/instances` — list all
+- `POST /api/instances` — create
+- `GET /api/instances/{name}` — detail
+- `PUT /api/instances/{name}` — update config
+- `DELETE /api/instances/{name}` — remove
+- `POST /api/instances/{name}/start|stop|restart|update|clone|backup|restore`
+- `GET /api/instances/{name}/logs` — last N lines
+- `GET /api/instances/{name}/logs/stream` — SSE stream
+- `GET /health` — liveness probe

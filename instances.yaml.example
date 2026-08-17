@@ -1,0 +1,41 @@
+# instances.yaml.example
+# ─────────────────────────────────────────────────────────────────────────────
+# Copy this file to instances.yaml and customise for your environment.
+# This file is the single source of truth for all registered Immo-Boussole
+# instances managed by this orchestrator.
+# ─────────────────────────────────────────────────────────────────────────────
+
+instances:
+  # ── Local development instance ─────────────────────────────────────────────
+  - name: dev
+    # Docker host connection string.
+    # Accepted values:
+    #   "local"              → use the default local Docker socket
+    #   "unix:///var/run/docker.sock"  → explicit Unix socket path (Linux/macOS)
+    #   "npipe:////./pipe/docker_engine" → Windows named pipe (Docker Desktop)
+    #   "ssh://user@hostname"           → remote host via SSH tunnel
+    #   "tcp://hostname:2376"           → remote host via TCP (add tls_cert for TLS)
+    host: local
+    # Port exposed on the host for the Immo-Boussole web UI
+    port: 8000
+    # Docker image to use. Set to null to build from build_context instead.
+    image: wikijm/immo-boussole:latest
+    # Path to a .env file to inject into the container (relative to this file)
+    env_file: ./envs/dev.env
+    # Path to a directory containing a Dockerfile (for local builds).
+    # Set to null when using a pre-built image.
+    build_context: null
+    # Path to a TLS client certificate bundle (only needed for tcp:// hosts).
+    tls_cert: null
+    # Human-readable description shown in the web UI
+    description: "Local development instance"
+
+  # ── Remote production instance ─────────────────────────────────────────────
+  - name: prod
+    host: ssh://deploy@myserver.example.com
+    port: 8100
+    image: wikijm/immo-boussole:1.2.3
+    env_file: ./envs/prod.env
+    build_context: null
+    tls_cert: null
+    description: "Production instance on myserver"

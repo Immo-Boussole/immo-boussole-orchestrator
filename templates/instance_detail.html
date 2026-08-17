@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}{{ instance.name }} — Immo-Boussole Orchestrator{% endblock %}
+
+{% block content %}
+<!-- Hidden data attr for JS -->
+<div data-instance-name="{{ instance.name }}" hidden aria-hidden="true"></div>
+
+<div class="page-container">
+
+  <!-- ── Breadcrumb / back ───────────────────────────────────────────────── -->
+  <div style="margin-bottom:1.25rem;">
+    <a href="/" class="btn btn-ghost btn-sm" aria-label="Back to dashboard">← Dashboard</a>
+  </div>
+
+  <!-- ── Page header ──────────────────────────────────────────────────────── -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">
+        {{ instance.name }}
+        {% set badge_class = 'badge-unknown' %}
+        {% set badge_label = 'Unknown' %}
+        {% if status.state == 'running' %}
+          {% if status.health == 'unhealthy' %}
+            {% set badge_class = 'badge-unhealthy' %}
+            {% set badge_label = 'Unhealthy' %}
+          {% else %}
+            {% set badge_class = 'badge-running' %}
+            {% set badge_label = 'Running' %}
+          {% endif %}
+        {% elif status.state in ('exited', 'stopped') %}
+          {% set badge_class = 'badge-exited' %}
+          {% set badge_label = 'Stopped' %}
+        {% elif status.state == 'absent' %}
+          {% set badge_class = 'badge-absent' %}
+          {% set badge_label = 'Absent' %}
+        {% elif status.state == 'error' %}
+          {% set badge_class = 'badge-error' %}
+          {% set badge_label = 'Error' %}
+        {% endif %}
+        <span class="badge {{ badge_class }}" aria-label="Status: {{ badge_label }}">
+          <span class="badge-dot" aria-hidden="true"></span>{{ badge_label }}
+        </span>
+      </h1>
+      {% if instance.description %}
+        <p class="page-subtitle">{{ instance.description }}</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ── Detail layout ────────────────────────────────────────────────────── -->
+  <div class="detail-layout">
+
+    <!-- ── Sidebar ────────────────────────────────────────────────────────── -->
+    <aside class="detail-sidebar">
+
+      <!-- Action bar -->
+      <div class="card-panel">
+        <p class="panel-title">Actions</p>
+        <div class="action-bar">
+          {% if status.state == 'running' %}
+            <button class="btn btn-ghost btn-sm" data-action="stop"    data-instance="{{ instance.name }}" aria-label="Stop">⏹ Stop</button>
+            <button class="btn btn-ghost btn-sm" data-action="restart" data-instance="{{ instance.name }}" aria-label="Restart">🔄 Restart</button>
+          {% else %}
+            <button class="btn btn-success btn-sm" data-action="start" data-instance="{{ instance.name }}" aria-label="Start">▶ Start</button>
+          {% endif %}
+          <button class="btn btn-warning btn-sm" data-action="update"  data-instance="{{ instance.name }}" aria-label="Update image">⬆ Update</button>
+          <button class="btn btn-ghost btn-sm"   data-action="backup"  data-instance="{{ instance.name }}" aria-label="Backup">💾 Backup</button>
+          <button class="btn btn-danger btn-sm"  data-action="delete"  data-instance="{{ instance.name }}" data-keep-volumes="true" aria-label="Delete">🗑 Delete</button>
+        </div>
+      </div>
+
+      <!-- Config -->
+      <div class="card-panel">
+        <p class="panel-title">Configuration</p>
+        <div class="info-row">
+          <span class="info-key">Name</span>
+          <span class="info-val">{{ instance.name }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Host</span>
+          <span class="info-val">{{ instance.host }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Port</span>
+          <span class="info-val">{{ instance.port }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Image</span>
+          <span class="info-val" style="word-break:break-all;">{{ instance.image or '(local build)' }}</span>
+        </div>
+        {% if instance.env_file %}
+          <div class="info-row">
+            <span class="info-key">Env File</span>
+            <span class="info-val">{{ instance.env_file }}</span>
+          </div>
+        {% endif %}
+        {% if instance.build_context %}
+          <div class="info-row">
+            <span class="info-key">Build Context</span>
+            <span class="info-val">{{ instance.build_context }}</span>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Live status -->
+      <div class="card-panel">
+        <p class="panel-title">Live Status</p>
+        <div class="info-row">
+          <span class="info-key">State</span>
+          <span class="info-val">{{ status.state }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Health</span>
+          <span class="info-val">{{ status.health }}</span>
+        </div>
+        {% if status.uptime_seconds is not none %}
+          <div class="info-row">
+            <span class="info-key">Uptime</span>
+            <span class="info-val">
+              {% set s = status.uptime_seconds %}
+              {% if s < 60 %}{{ s }}s
+              {% elif s < 3600 %}{{ s // 60 }}m {{ s % 60 }}s
+              {% elif s < 86400 %}{{ s // 3600 }}h {{ (s % 3600) // 60 }}m
+              {% else %}{{ s // 86400 }}d {{ (s % 86400) // 3600 }}h
+              {% endif %}
+            </span>
+          </div>
+        {% endif %}
+        {% if status.image %}
+          <div class="info-row">
+            <span class="info-key">Running Image</span>
+            <span class="info-val" style="word-break:break-all;font-size:0.7rem;">{{ status.image }}</span>
+          </div>
+        {% endif %}
+        {% if status.ports %}
+          <div class="info-row">
+            <span class="info-key">Ports</span>
+            <span class="info-val">
+              {% for p in status.ports %}{{ p }}{% if not loop.last %}, {% endif %}{% endfor %}
+            </span>
+          </div>
+        {% endif %}
+        {% if status.error %}
+          <div class="info-row">
+            <span class="info-key" style="color:var(--red);">Error</span>
+            <span class="info-val" style="color:var(--red);word-break:break-all;">{{ status.error }}</span>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Links -->
+      {% if status.state == 'running' %}
+        <div class="card-panel">
+          <p class="panel-title">Quick Links</p>
+          <a
+            href="http://localhost:{{ instance.port }}"
+            target="_blank" rel="noopener"
+            class="btn btn-ghost"
+            style="width:100%;justify-content:center;"
+          >🌐 Open UI ↗</a>
+          <div style="margin-top:0.5rem;">
+            <a
+              href="http://localhost:{{ instance.port }}/docs"
+              target="_blank" rel="noopener"
+              class="btn btn-ghost btn-sm"
+              style="width:100%;justify-content:center;"
+            >📖 API Docs ↗</a>
+          </div>
+        </div>
+      {% endif %}
+
+    </aside><!-- /.detail-sidebar -->
+
+    <!-- ── Main: Log terminal ──────────────────────────────────────────────── -->
+    <section aria-label="Live logs for {{ instance.name }}">
+      <div class="log-container">
+        <div class="log-toolbar">
+          <span class="log-toolbar-title">📋 Live Logs — {{ instance.name }}</span>
+
+          <button id="btn-autoscroll" class="btn btn-ghost btn-sm" data-autoscroll="true">
+            ▶ Auto-scroll: ON
+          </button>
+          <button id="btn-toggle-stream" class="btn btn-ghost btn-sm">⏸ Pause stream</button>
+          <button id="btn-clear-logs" class="btn btn-ghost btn-sm">🗑 Clear</button>
+        </div>
+
+        <div
+          id="log-terminal"
+          class="log-terminal"
+          role="log"
+          aria-label="Container log output"
+          aria-live="polite"
+          tabindex="0"
+        ></div>
+      </div>
+    </section>
+
+  </div><!-- /.detail-layout -->
+
+</div><!-- /.page-container -->
+{% endblock %}

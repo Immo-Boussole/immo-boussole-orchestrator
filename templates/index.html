@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% set instance_count = instances | length %}
+
+{% block title %}Dashboard — Immo-Boussole Orchestrator{% endblock %}
+
+{% block content %}
+<div class="page-container">
+
+  <!-- ── Page header ──────────────────────────────────────────────────────── -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">🎛️ Instance Dashboard</h1>
+      <p class="page-subtitle">
+        {{ instances | length }} instance{{ 's' if instances | length != 1 else '' }} registered
+        &nbsp;·&nbsp; Status refreshes every 15s
+      </p>
+    </div>
+    <button id="btn-add-instance" class="btn btn-primary" aria-label="Add new instance">
+      ＋ Add Instance
+    </button>
+  </div>
+
+  <!-- ── Instance cards grid ─────────────────────────────────────────────── -->
+  {% if instances %}
+    <div class="instances-grid" role="list">
+      {% for item in instances %}
+        {% set cfg = item.config %}
+        {% set st  = item.status %}
+
+        <!-- Compute badge class -->
+        {% set badge_class = 'badge-unknown' %}
+        {% set badge_label = '⚪ Unknown' %}
+        {% if st.state == 'running' %}
+          {% if st.health == 'unhealthy' %}
+            {% set badge_class = 'badge-unhealthy' %}
+            {% set badge_label = '🟡 Unhealthy' %}
+          {% else %}
+            {% set badge_class = 'badge-running' %}
+            {% set badge_label = '🟢 Running' %}
+          {% endif %}
+        {% elif st.state in ('exited', 'stopped') %}
+          {% set badge_class = 'badge-exited' %}
+          {% set badge_label = '🔴 Stopped' %}
+        {% elif st.state == 'absent' %}
+          {% set badge_class = 'badge-absent' %}
+          {% set badge_label = '⚪ Absent' %}
+        {% elif st.state == 'error' %}
+          {% set badge_class = 'badge-error' %}
+          {% set badge_label = '⚠️ Error' %}
+        {% endif %}
+
+        <!-- Uptime display -->
+        {% set uptime_str = '—' %}
+        {% if st.uptime_seconds is not none %}
+          {% set s = st.uptime_seconds %}
+          {% if s < 60 %}
+            {% set uptime_str = s | string + 's' %}
+          {% elif s < 3600 %}
+            {% set uptime_str = (s // 60) | string + 'm' %}
+          {% elif s < 86400 %}
+            {% set uptime_str = (s // 3600) | string + 'h ' + ((s % 3600) // 60) | string + 'm' %}
+          {% else %}
+            {% set uptime_str = (s // 86400) | string + 'd ' + ((s % 86400) // 3600) | string + 'h' %}
+          {% endif %}
+        {% endif %}
+
+        <article class="instance-card" role="listitem" aria-label="Instance {{ cfg.name }}">
+          <div class="card-header">
+            <div>
+              <a href="/instances/{{ cfg.name }}" class="card-name">{{ cfg.name }}</a>
+              {% if cfg.description %}
+                <p class="card-description" title="{{ cfg.description }}">{{ cfg.description }}</p>
+              {% endif %}
+            </div>
+            <span
+              class="badge {{ badge_class }}"
+              data-instance-badge="{{ cfg.name }}"
+              aria-label="Status: {{ badge_label }}"
+            >
+              <span class="badge-dot" aria-hidden="true"></span>
+              {{ badge_label }}
+            </span>
+          </div>
+
+          <div class="card-meta">
+            <div class="meta-item">
+              <span class="meta-label">Host</span>
+              <span class="meta-value truncate" title="{{ cfg.host }}">{{ cfg.host }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Port</span>
+              <span class="meta-value">{{ cfg.port }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Image</span>
+              <span class="meta-value truncate" title="{{ cfg.image or 'local build' }}">
+                {{ (cfg.image or 'local build') | truncate(28, True, '…') }}
+              </span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Uptime</span>
+              <span class="meta-value">{{ uptime_str }}</span>
+            </div>
+          </div>
+
+          <div class="card-actions">
+            {% if st.state == 'running' %}
+              <button
+                class="btn btn-ghost btn-sm"
+                data-action="stop"
+                data-instance="{{ cfg.name }}"
+                aria-label="Stop {{ cfg.name }}"
+              >⏹ Stop</button>
+              <button
+                class="btn btn-ghost btn-sm"
+                data-action="restart"
+                data-instance="{{ cfg.name }}"
+                aria-label="Restart {{ cfg.name }}"
+              >🔄 Restart</button>
+            {% else %}
+              <button
+                class="btn btn-success btn-sm"
+                data-action="start"
+                data-instance="{{ cfg.name }}"
+                aria-label="Start {{ cfg.name }}"
+              >▶ Start</button>
+            {% endif %}
+
+            <button
+              class="btn btn-ghost btn-sm"
+              data-action="update"
+              data-instance="{{ cfg.name }}"
+              aria-label="Update {{ cfg.name }}"
+            >⬆ Update</button>
+
+            <a href="/instances/{{ cfg.name }}" class="btn btn-ghost btn-sm" aria-label="View logs for {{ cfg.name }}">
+              📋 Logs
+            </a>
+
+            <button
+              class="btn btn-danger btn-sm"
+              data-action="delete"
+              data-instance="{{ cfg.name }}"
+              data-keep-volumes="true"
+              aria-label="Delete {{ cfg.name }}"
+            >🗑</button>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+
+  {% else %}
+    <!-- Empty state -->
+    <div class="empty-state" role="status">
+      <div class="empty-state-icon" aria-hidden="true">🏗️</div>
+      <h3>No instances yet</h3>
+      <p>Click <strong>Add Instance</strong> to register your first Immo-Boussole instance.</p>
+    </div>
+  {% endif %}
+
+</div><!-- /.page-container -->
+
+<!-- ── FAB ────────────────────────────────────────────────────────────────── -->
+{% if instances %}
+  <button
+    id="fab-add"
+    class="fab"
+    aria-label="Add new instance"
+    title="Add new instance"
+  >＋</button>
+{% endif %}
+
+<!-- ── Add Instance Modal ─────────────────────────────────────────────────── -->
+<div id="modal-create-instance" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-create-title">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modal-create-title">➕ Add Instance</h2>
+      <button class="modal-close" data-modal-close aria-label="Close modal">✕</button>
+    </div>
+
+    <form id="form-create-instance" novalidate>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="f-name">Name <span aria-hidden="true">*</span></label>
+          <input
+            id="f-name" name="name" type="text"
+            class="form-control" required
+            placeholder="dev, prod, staging…"
+            pattern="[a-zA-Z0-9_-]+"
+            autocomplete="off"
+          />
+          <p class="form-hint">Letters, digits, hyphens, underscores only.</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="f-port">Host Port <span aria-hidden="true">*</span></label>
+          <input id="f-port" name="port" type="number" class="form-control" value="8000" min="1" max="65535" required />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="f-host">Docker Host</label>
+        <input
+          id="f-host" name="host" type="text"
+          class="form-control"
+          placeholder="local | ssh://user@host | tcp://host:2376"
+          value="local"
+        />
+        <p class="form-hint">Use <code>local</code> for the local Docker daemon, or <code>ssh://user@host</code> for remote.</p>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="f-image">Docker Image</label>
+        <input
+          id="f-image" name="image" type="text"
+          class="form-control"
+          placeholder="wikijm/immo-boussole:latest"
+          value="wikijm/immo-boussole:latest"
+        />
+        <p class="form-hint">Leave empty if using a local build context.</p>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="f-env-file">Env File Path</label>
+        <input id="f-env-file" name="env_file" type="text" class="form-control" placeholder="./envs/dev.env" />
+        <p class="form-hint">Optional path to a .env file injected into the container.</p>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="f-description">Description</label>
+        <input id="f-description" name="description" type="text" class="form-control" placeholder="Local dev instance…" />
+      </div>
+
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+          <input type="checkbox" name="start_after_create" style="width:18px;height:18px;" />
+          <span class="form-label" style="margin:0;">Start container immediately after creation</span>
+        </label>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn-primary">Create Instance</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

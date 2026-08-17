@@ -1,0 +1,65 @@
+---
+# docker-compose.hub.yml — PRODUCTION
+# Uses the pre-built image from Docker Hub.
+# Named volumes ensure instances.yaml and data persist across restarts.
+#
+# Usage:
+#   docker compose -f docker-compose.hub.yml up -d
+
+name: immo-boussole-orchestrator
+
+services:
+
+  # ── Orchestrator (Hub image) ──────────────────────────────────────────────
+  orchestrator:
+    image: wikijm/immo-boussole-orchestrator:${APP_VERSION:-latest}
+    container_name: immo-boussole-orchestrator
+    restart: always
+
+    ports:
+      - "${ORCHESTRATOR_PORT:-9000}:9000"
+      - "${MCP_PORT:-9001}:9001"
+
+    environment:
+      SECRET_KEY:                 "${SECRET_KEY:?SECRET_KEY is required}"
+      ADMIN_USERNAME:             "${ADMIN_USERNAME:-admin}"
+      ADMIN_PASSWORD:             "${ADMIN_PASSWORD:?ADMIN_PASSWORD is required}"
+      ORCHESTRATOR_HOST:          "0.0.0.0"
+      ORCHESTRATOR_PORT:          "9000"
+      MCP_PORT:                   "9001"
+      INSTANCES_FILE:             "/data/instances.yaml"
+      NOTIFICATION_WEBHOOK_URL:   "${NOTIFICATION_WEBHOOK_URL:-}"
+      SMTP_HOST:                  "${SMTP_HOST:-}"
+      SMTP_PORT:                  "${SMTP_PORT:-587}"
+      SMTP_USERNAME:              "${SMTP_USERNAME:-}"
+      SMTP_PASSWORD:              "${SMTP_PASSWORD:-}"
+      SMTP_FROM:                  "${SMTP_FROM:-orchestrator@example.com}"
+      SMTP_TO:                    "${SMTP_TO:-}"
+      HEALTH_POLL_INTERVAL:       "${HEALTH_POLL_INTERVAL:-30}"
+      DEBUG:                      "false"
+
+    volumes:
+      # Persistent instances registry
+      - orchestrator-data:/data
+      # Docker socket — grants access to the host Docker daemon
+      # ⚠️  Only expose this if you trust the orchestrator completely.
+      - /var/run/docker.sock:/var/run/docker.sock
+
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:9000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# ── Persistent volumes ────────────────────────────────────────────────────────
+volumes:
+  orchestrator-data:
+    name: immo-boussole-orchestrator-data
