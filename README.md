@@ -1,5 +1,20 @@
 # 🎛️ Immo-Boussole Orchestrator
 
+[![CI](https://github.com/Immo-Boussole/immo-boussole-orchestrator/actions/workflows/ci.yml/badge.svg)](https://github.com/Immo-Boussole/immo-boussole-orchestrator/actions/workflows/ci.yml)
+[![Docker Hub](https://img.shields.io/badge/docker-hub-blue.svg?logo=docker&logoColor=white)](https://hub.docker.com/repository/docker/wikijm/immo-boussole-orchestrator/general)
+[![Wiki Documentation](https://img.shields.io/badge/docs-GitHub%20Wiki-blue?logo=github)](https://github.com/Immo-Boussole/immo-boussole/wiki)
+
+> 🧭 **Immo-Boussole Organization**: [Core Web App](https://github.com/Immo-Boussole/immo-boussole) • [WebExtension](https://github.com/Immo-Boussole/immo-boussole-extension) • [Orchestrator](https://github.com/Immo-Boussole/immo-boussole-orchestrator) • [Central Wiki](https://github.com/Immo-Boussole/immo-boussole/wiki)
+
+---
+
+## 🌐 Languages
+
+- 🇬🇧 [English (Default)](README.md)
+- 🇫🇷 [Français](README.fr.md)
+
+---
+
 > **CLI & web orchestrator** to deploy, manage, monitor, and update multiple [Immo-Boussole](https://github.com/Immo-Boussole/immo-boussole) instances on local or remote Docker hosts — from any OS (Windows, Linux, macOS).
 
 ---
@@ -26,6 +41,18 @@ It communicates directly with Docker daemons — locally via Unix/TCP socket, or
 - **MCP Server** — Model Context Protocol server to manage instances via Claude Desktop or any LLM tool
 - **Auth** — HTTP Basic authentication for the web interface
 - **CI/CD** — GitHub Actions pipeline: tests + Docker Hub image publication
+
+---
+
+## 📚 Complete Documentation & Wiki Guides
+
+Detailed operational guides are available on the **[Central GitHub Wiki](https://github.com/Immo-Boussole/immo-boussole/wiki)**:
+
+| Guide | Description | Link |
+|---|---|---|
+| 🎛️ **Orchestrator Setup & Operations** | Fleet deployment, CLI reference, remote SSH/TCP Docker hosts | [Read Guide](https://github.com/Immo-Boussole/immo-boussole/wiki/Orchestrator-Setup-EN) |
+| 🧭 **Architecture & Ecosystem** | How Core App, WebExtension, and Orchestrator work together | [Read Guide](https://github.com/Immo-Boussole/immo-boussole/wiki/Architecture-Overview-EN) |
+| 🐳 **Docker Deployment (Core App)** | Standalone core app deployment with Docker Compose | [Read Guide](https://github.com/Immo-Boussole/immo-boussole/wiki/Installation-Docker-EN) |
 
 ---
 
